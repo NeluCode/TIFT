@@ -1,9 +1,11 @@
 package com.nelu.tift.db.model
 
+import androidx.annotation.Keep
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.nelu.tift.data.model.URLTypes
 
+@Keep
 @Entity
 data class ModelDownloads(
     @PrimaryKey

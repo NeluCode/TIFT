@@ -1,8 +1,10 @@
 package com.nelu.tift.di
 
 import android.app.Application
+import androidx.annotation.Keep
 import com.nelu.tift.data.repo.base.BaseTIFT
 
+@Keep
 object KitTIFT {
 
     val INSTANCE get() = getTIFT()

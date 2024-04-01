@@ -1,8 +1,10 @@
 package com.nelu.tift.data.model
 
+import androidx.annotation.Keep
 import com.google.gson.JsonObject
 import com.nelu.tift.data.model.Author.Companion.toAuthor
 
+@Keep
 data class ModelTiktok(
     val type: String,
     val author: Author,
@@ -30,6 +32,8 @@ data class ModelTiktok(
     }
 }
 
+
+@Keep
 data class Author(
     val avatar: String,
     val nickname: String,
