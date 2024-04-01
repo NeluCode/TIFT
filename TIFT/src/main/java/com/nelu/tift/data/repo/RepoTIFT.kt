@@ -4,15 +4,15 @@ import com.nelu.tift.data.model.ModelTiktok
 import com.nelu.tift.data.model.URLTypes
 import com.nelu.tift.data.repo.base.BaseTIFT
 import com.nelu.tift.data.repo.base.BaseTiktok
+import com.nelu.tift.db.dao.DaoDownloads
+import com.nelu.tift.db.model.ModelDownloads
 import java.io.File
 import java.util.regex.Pattern
 
 class RepoTIFT (
-    private val baseTiktok: BaseTiktok
+    private val baseTiktok: BaseTiktok,
+    private val daoDownloads: DaoDownloads
 ): BaseTIFT {
-    override fun getDownloads(): List<File> {
-        TODO("Not yet implemented")
-    }
 
     override suspend fun getTiktok(): BaseTiktok = baseTiktok
 
@@ -23,6 +23,8 @@ class RepoTIFT (
         isTwitterUrl(url) -> URLTypes.TWITTER
         else -> URLTypes.UNKNOWN
     }
+
+    override suspend fun getDownloads() = daoDownloads.getAllDownloads()
 
     private fun isTikTokUrl(url: String): Boolean {
         val tiktokPattern = Pattern.compile("^(https?://)?(www\\.)?(tiktok\\.com)")

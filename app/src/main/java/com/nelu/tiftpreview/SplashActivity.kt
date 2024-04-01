@@ -30,11 +30,15 @@ class SplashActivity : AppCompatActivity() {
     }
 
     private suspend fun downloadTiktok(url: String) {
-        KitTIFT.INSTANCE.getTiktok().getVideo(url)?.let {
-            KitTIFT.INSTANCE.getTiktok().downloadTiktok(it, it.videoSD).collect {
-                println(it)
-            }
-            println(it)
+//        KitTIFT.INSTANCE.getTiktok().getVideo(url)?.let {
+//            KitTIFT.INSTANCE.getTiktok().downloadTiktok(it, it.videoHD ?: it.videoSD).collect {
+//                println(it)
+//            }
+//            println(it)
+//        }
+
+        KitTIFT.INSTANCE.getDownloads().let {
+            Log.e("DATA", it.toString())
         }
     }
 }

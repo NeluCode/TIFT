@@ -2,6 +2,7 @@ package com.nelu.tift.data.repo.base
 
 import com.nelu.tift.data.model.DownloadStatus
 import com.nelu.tift.data.model.ModelTiktok
+import com.nelu.tift.db.dao.DaoDownloads
 import kotlinx.coroutines.flow.Flow
 
 interface BaseTiktok {

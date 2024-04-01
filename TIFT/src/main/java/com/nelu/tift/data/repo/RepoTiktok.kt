@@ -5,14 +5,18 @@ import com.nelu.tift.data.apis.ApiService
 import com.nelu.tift.data.apis.ModelRequest
 import com.nelu.tift.data.model.ModelTiktok
 import com.nelu.tift.data.model.ModelTiktok.Companion.toModelTiktok
+import com.nelu.tift.data.model.URLTypes
 import com.nelu.tift.data.repo.base.BaseTiktok
+import com.nelu.tift.db.dao.DaoDownloads
+import com.nelu.tift.db.model.ModelDownloads
 import com.nelu.tift.di.KitTIFT
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.io.File
 
 class RepoTiktok(
-    private val apiService: ApiService
+    private val apiService: ApiService,
+    private val daoDownloads: DaoDownloads
 ): BaseTiktok {
 
 
@@ -35,7 +39,7 @@ class RepoTiktok(
         }
 
         val totalFileSize = body.contentLength()
-        val outputFile = File(KitTIFT.application.externalCacheDir, name)
+        val outputFile = File(KitTIFT.application.filesDir, name)
 
         if (outputFile.exists()) outputFile.deleteRecursively()
 
@@ -55,6 +59,16 @@ class RepoTiktok(
                     val progress = ((fileSizeDownloaded * 100) / totalFileSize).toInt()
                     emit(DownloadStatus.Progress(progress))
                 }
+
+                daoDownloads.insertDownloads(
+                    ModelDownloads(
+                        id = System.currentTimeMillis(),
+                        name = data.author.nickname,
+                        path = outputFile.absolutePath,
+                        description = data.desc,
+                        Type = URLTypes.TIKTOK.name
+                    )
+                )
 
                 emit(DownloadStatus.Completed)
             }
