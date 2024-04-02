@@ -1,15 +1,13 @@
 package com.nelu.tift.data.repo.base
 
 import androidx.annotation.Keep
-import com.nelu.tift.data.model.ModelTiktok
 import com.nelu.tift.data.model.URLTypes
-import com.nelu.tift.db.model.ModelDownloads
-import java.io.File
+import com.nelu.tift.data.model.local.ModelDownloads
 
 @Keep
 interface BaseTIFT {
 
-    suspend fun getTiktok(): BaseTiktok
+    val tiktok: BaseTiktok
 
     suspend fun identifyURL(url: String): URLTypes
 

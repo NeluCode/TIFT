@@ -1,20 +1,18 @@
 package com.nelu.tift.data.repo
 
-import com.nelu.tift.data.model.ModelTiktok
 import com.nelu.tift.data.model.URLTypes
 import com.nelu.tift.data.repo.base.BaseTIFT
 import com.nelu.tift.data.repo.base.BaseTiktok
 import com.nelu.tift.db.dao.DaoDownloads
-import com.nelu.tift.db.model.ModelDownloads
+import com.nelu.tift.di.Initializations
+import com.nelu.tift.di.Initializations.apiService
+import com.nelu.tift.di.Initializations.daoDownloads
 import java.io.File
 import java.util.regex.Pattern
 
-class RepoTIFT (
-    private val baseTiktok: BaseTiktok,
-    private val daoDownloads: DaoDownloads
-): BaseTIFT {
+class RepoTIFT : BaseTIFT {
 
-    override suspend fun getTiktok(): BaseTiktok = baseTiktok
+    override val tiktok: BaseTiktok get() = RepoTiktok()
 
     override suspend fun identifyURL(url: String) = when {
         isTikTokUrl(url) -> URLTypes.TIKTOK

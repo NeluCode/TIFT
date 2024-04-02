@@ -4,7 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.nelu.tift.db.model.ModelDownloads
+import com.nelu.tift.data.model.local.ModelDownloads
 
 @Dao
 interface DaoDownloads {

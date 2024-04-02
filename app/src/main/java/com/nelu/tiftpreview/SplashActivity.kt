@@ -16,7 +16,7 @@ class SplashActivity : AppCompatActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             val url = "https://www.tiktok.com/@shamima_afrinomi338/video/7345759236976053522?is_from_webapp=1&sender_device=pc"
-            KitTIFT.INSTANCE.identifyURL(url).let {
+            KitTIFT.identifyURL(url).let {
                 Log.e("TYPE", it.toString())
                 when(it) {
                     URLTypes.TIKTOK -> downloadTiktok(url)
@@ -30,15 +30,19 @@ class SplashActivity : AppCompatActivity() {
     }
 
     private suspend fun downloadTiktok(url: String) {
-//        KitTIFT.INSTANCE.getTiktok().getVideo(url)?.let {
-//            KitTIFT.INSTANCE.getTiktok().downloadTiktok(it, it.videoHD ?: it.videoSD).collect {
-//                println(it)
-//            }
-//            println(it)
+//        KitTIFT.tiktok.getBatchVideo(this, "shamima_afrinomi338").let {
+//            Log.e("Batch Video id's", it.toString())
 //        }
 
-        KitTIFT.INSTANCE.getDownloads().let {
-            Log.e("DATA", it.toString())
+        KitTIFT.tiktok.getVideo(url)?.let {
+            KitTIFT.tiktok.downloadTiktok(it, it.videoHD ?: it.videoSD).collect {
+                println(it)
+            }
+            println(it)
+        }
+
+        KitTIFT.getDownloads().let {
+            Log.e("My Downloads", it.toString())
         }
     }
 }

@@ -17,6 +17,7 @@ object Initializations {
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
+    /** Remote API's */
     val apiService: ApiService get() = retrofit.create(ApiService::class.java)
 
 
@@ -27,5 +28,6 @@ object Initializations {
         DATABASE_NAME
     ).allowMainThreadQueries().build()
 
+    /** Local Data Access Object's */
     val daoDownloads: DaoDownloads get() = appDatabase.userDao()
 }

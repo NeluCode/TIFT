@@ -1,4 +1,4 @@
-package com.nelu.tift.db.model
+package com.nelu.tift.data.model.local
 
 import androidx.annotation.Keep
 import androidx.room.Entity
@@ -13,5 +13,5 @@ data class ModelDownloads(
     val name: String,
     val path: String,
     val description: String,
-    val Type: String
+    val type: URLTypes
 )

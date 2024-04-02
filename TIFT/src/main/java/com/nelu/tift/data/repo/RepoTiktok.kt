@@ -1,24 +1,37 @@
 package com.nelu.tift.data.repo
 
+import android.app.Activity
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
+import android.view.View
+import android.view.ViewGroup
+import android.webkit.WebChromeClient
+import android.webkit.WebView
 import com.nelu.tift.data.model.DownloadStatus
 import com.nelu.tift.data.apis.ApiService
-import com.nelu.tift.data.apis.ModelRequest
+import com.nelu.tift.data.model.remote.ModelRequest
 import com.nelu.tift.data.model.ModelTiktok
 import com.nelu.tift.data.model.ModelTiktok.Companion.toModelTiktok
 import com.nelu.tift.data.model.URLTypes
 import com.nelu.tift.data.repo.base.BaseTiktok
 import com.nelu.tift.db.dao.DaoDownloads
-import com.nelu.tift.db.model.ModelDownloads
+import com.nelu.tift.data.model.local.ModelDownloads
+import com.nelu.tift.di.Initializations.apiService
+import com.nelu.tift.di.Initializations.daoDownloads
 import com.nelu.tift.di.KitTIFT
+import com.nelu.tift.utils.processPageData
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import java.io.File
 
-class RepoTiktok(
-    private val apiService: ApiService,
-    private val daoDownloads: DaoDownloads
-): BaseTiktok {
-
+class RepoTiktok: BaseTiktok {
 
     override suspend fun getVideo(url: String): ModelTiktok? {
         apiService.getTiktokList(ModelRequest(url)).execute().let {
@@ -26,6 +39,36 @@ class RepoTiktok(
                 return it.body()!!.toModelTiktok()
         }
         return null
+    }
+
+    override suspend fun getBatchVideo(activity: Activity, profileID: String): List<String> {
+        return suspendCancellableCoroutine { continuation ->
+            activity.runOnUiThread {
+                WebView(KitTIFT.application).let { webView ->
+                    webView.layoutParams = ViewGroup.LayoutParams(1, 1)
+
+                    webView.webChromeClient = object : WebChromeClient() {
+                        private var isPageLoaded = false
+                        override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                            super.onProgressChanged(view, newProgress)
+                            Log.e("PROGRESS", newProgress.toString())
+                            if (newProgress == 100 && !isPageLoaded) {
+                                isPageLoaded = true
+                                processPageData(view, continuation)
+                            }
+                        }
+                    }
+
+                    val webSettings = webView.settings
+                    webSettings.javaScriptEnabled = true
+                    webSettings.domStorageEnabled = true
+
+                    activity.addContentView(webView, webView.layoutParams)
+                    webView.loadUrl("https://www.tiktok.com/@$profileID")
+                    webView.visibility = View.GONE
+                }
+            }
+        }
     }
 
     override fun downloadTiktok(data: ModelTiktok, url: String): Flow<DownloadStatus> = flow {
@@ -66,13 +109,17 @@ class RepoTiktok(
                         name = data.author.nickname,
                         path = outputFile.absolutePath,
                         description = data.desc,
-                        Type = URLTypes.TIKTOK.name
+                        type = URLTypes.TIKTOK
                     )
                 )
 
                 emit(DownloadStatus.Completed)
             }
         }
+    }
+
+    override fun downloadTiktoks(data: List<Pair<ModelTiktok, String>>): Flow<DownloadStatus> {
+        TODO("Not yet implemented")
     }
 
     private fun extractNumberFromUrl(url: String): String {

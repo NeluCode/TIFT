@@ -1,6 +1,7 @@
 package com.nelu.tift.data.apis
 
 import com.google.gson.JsonObject
+import com.nelu.tift.data.model.remote.ModelRequest
 import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.http.Body
