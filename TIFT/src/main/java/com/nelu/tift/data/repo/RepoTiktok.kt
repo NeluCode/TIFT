@@ -41,6 +41,8 @@ import org.json.JSONObject
 import java.io.File
 import kotlin.coroutines.resume
 
+import kotlinx.coroutines.*
+
 class RepoTiktok: BaseTiktok {
 
     override suspend fun getVideo(url: String): ModelTiktok? {
@@ -70,7 +72,9 @@ class RepoTiktok: BaseTiktok {
                     }
 
                     val webSettings = webView.settings
+
                     webSettings.javaScriptEnabled = true
+                    
                     webSettings.domStorageEnabled = true
 
                     activity.addContentView(webView, webView.layoutParams)
@@ -135,74 +139,78 @@ class RepoTiktok: BaseTiktok {
     override suspend fun getTiktokInfos(
         activity: Activity,
         urls: ArrayList<String>
-    ): ArrayList<ModelTiktok> {
-        val data = ArrayList<ModelTiktok>()
+    ): List<ModelTiktok> {
 
-        urls.forEach { ids->
-            data.add(
-                suspendCancellableCoroutine { continuation ->
-                    activity.runOnUiThread {
-                        WebView(KitTIFT.application).let { webView ->
-                            webView.layoutParams = ViewGroup.LayoutParams(1, 1)
+        return suspendCancellableCoroutine {
+            CoroutineScope(Dispatchers.IO).launch {
+                it.resume(
+                    urls.map { url ->
+                        async { getVideoInfoByUrl(activity, url) }
+                    }.awaitAll()
+                )
+            }
+        }
+    }
 
-                            webView.webViewClient = object : WebViewClient() {
-                                override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                                    Handler(Looper.getMainLooper()).postDelayed({
-                                        view?.evaluateJavascript(ids.getVideoPasteFunc()) {}
-                                    }, 1000)
+    private suspend fun getVideoInfoByUrl(activity: Activity, ids: String): ModelTiktok {
+        return suspendCancellableCoroutine { continuation ->
+            activity.runOnUiThread {
+                WebView(KitTIFT.application).let { webView ->
+                    webView.layoutParams = ViewGroup.LayoutParams(1, 1)
+
+                    webView.webViewClient = object : WebViewClient() {
+                        override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                            Handler(Looper.getMainLooper()).postDelayed({
+                                view?.evaluateJavascript(ids.getVideoPasteFunc()) {}
+                            }, 1000)
+                        }
+
+                        override fun onPageFinished(view: WebView?, url: String?) {
+                            super.onPageFinished(view, url)
+                            CoroutineScope(Dispatchers.Main).launch {
+                                var loop = true
+                                while (loop) {
+                                    view?.evaluateJavascript(checkProgress) {
+                                        loop = it != "null"
+                                    }
+                                    if (loop) delay(1000)
                                 }
-
-                                override fun onPageFinished(view: WebView?, url: String?) {
-                                    super.onPageFinished(view, url)
-                                    CoroutineScope(Dispatchers.Main).launch {
-                                        var loop = true
-                                        while (loop) {
-                                            view?.evaluateJavascript(checkProgress) {
-                                                loop = it != "null"
-                                                Log.e("IT", it.toString())
-                                            }
-                                            if (loop) delay(1000)
-                                        }
-                                        view?.evaluateJavascript(getVideoInfo) { html ->
-                                            JSONObject(
-                                                html.substring(1, html.length-1)
-                                                    .replace("\\", "")
-                                            ).let {
-                                                continuation.resume(
-                                                    ModelTiktok(
-                                                        type = "",
-                                                        author = Author(
-                                                            avatar = it.getString("image"),
-                                                            nickname = it.getString("title")
-                                                        ),
-                                                        desc = it.getString("description"),
-                                                        music = "",
-                                                        videoSD = "",
-                                                        videoHD = "",
-                                                        videWatermark = ""
-                                                    )
-                                                )
-                                            }
-                                        }
-
+                                view?.evaluateJavascript(getVideoInfo) { html ->
+                                    JSONObject(
+                                        html.substring(1, html.length-1)
+                                            .replace("\\", "")
+                                    ).let {
+                                        continuation.resume(
+                                            ModelTiktok(
+                                                type = "",
+                                                author = Author(
+                                                    avatar = it.getString("image"),
+                                                    nickname = it.getString("title")
+                                                ),
+                                                desc = it.getString("description"),
+                                                music = "",
+                                                videoSD = "",
+                                                videoHD = "",
+                                                videWatermark = ""
+                                            )
+                                        )
                                     }
                                 }
+
                             }
-
-                            val webSettings = webView.settings
-                            webSettings.javaScriptEnabled = true
-                            webSettings.domStorageEnabled = true
-
-                            activity.addContentView(webView, webView.layoutParams)
-                            webView.loadUrl("https://savetik.net/")
-                            webView.visibility = View.GONE
                         }
                     }
-                }
-            )
-        }
 
-        return data
+                    val webSettings = webView.settings
+                    webSettings.javaScriptEnabled = true
+                    webSettings.domStorageEnabled = true
+
+                    activity.addContentView(webView, webView.layoutParams)
+                    webView.loadUrl("https://savetik.net/")
+                    webView.visibility = View.GONE
+                }
+            }
+        }
     }
 
     private fun extractNumberFromUrl(url: String): String {

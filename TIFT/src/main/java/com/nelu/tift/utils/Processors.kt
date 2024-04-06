@@ -12,18 +12,17 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalCoroutinesApi::class)
 fun processPageData(view: WebView?, continuation: CancellableContinuation<List<String>>) {
-    view?.evaluateJavascript(
-        "(function() { return document.documentElement.outerHTML; })();"
-    ) { html ->
 
-        var retried = 0
-        val videoIds = mutableListOf<String>()
+    var retried = 0
+    val videoIds = mutableListOf<String>()
 
-        CoroutineScope(Dispatchers.IO).launch {
-            while (videoIds.isEmpty() && retried < 5) {
-                Log.e("Retry", retried.toString())
+    CoroutineScope(Dispatchers.Main).launch {
+        while (videoIds.isEmpty() && retried < 10) {
+            delay(1000)
+            view?.evaluateJavascript(
+                "(function() { return document.documentElement.outerHTML; })();"
+            ) { html ->
                 retried++
-                delay(250L * retried)
                 val urlRegex = Regex("""https://www\.tiktok\.com/@\w+/video/(\d+)""")
                 val matches = urlRegex.findAll(html)
 
@@ -32,10 +31,10 @@ fun processPageData(view: WebView?, continuation: CancellableContinuation<List<S
                     videoIds.add(videoId)
                 }
             }
+        }
 
-            continuation.resume(videoIds) { e ->
-                view.stopLoading()
-            }
+        continuation.resume(videoIds) { e ->
+            view?.stopLoading()
         }
     }
 }

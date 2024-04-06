@@ -29,17 +29,23 @@ class SplashActivity : AppCompatActivity() {
 //        }
 
         CoroutineScope(Dispatchers.IO).launch {
-            KitTIFT.tiktok.getTiktokInfos(
+            KitTIFT.tiktok.getBatchVideo(
                 this@SplashActivity,
-                ArrayList<String>().also {
-                    it.add("7340174709188726034")
-                    it.add("7340174709188726034")
-                    it.add("7340174709188726034")
-                    it.add("7340174709188726034")
-                }
+                "shamima_afrinomi338"
             ).let {
                 Log.e("DATA", it.toString())
             }
+//            KitTIFT.tiktok.getTiktokInfos(
+//                this@SplashActivity,
+//                ArrayList<String>().also {
+//                    it.add("7340174709188726034")
+//                    it.add("7340174709188726034")
+//                    it.add("7340174709188726034")
+//                    it.add("7340174709188726034")
+//                }
+//            ).let {
+//                Log.e("DATA", it.toString())
+//            }
         }
     }
 

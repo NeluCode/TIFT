@@ -18,5 +18,5 @@ interface BaseTiktok {
 
     fun downloadTiktoks(data : List<Pair<ModelTiktok, String>>): Flow<DownloadStatus>
 
-    suspend fun getTiktokInfos(activity: Activity, urls: ArrayList<String>): ArrayList<ModelTiktok>
+    suspend fun getTiktokInfos(activity: Activity, urls: ArrayList<String>): List<ModelTiktok>
 }
