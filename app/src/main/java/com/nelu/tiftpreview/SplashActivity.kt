@@ -14,17 +14,31 @@ class SplashActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
 
+//        CoroutineScope(Dispatchers.IO).launch {
+//            val url = "https://www.tiktok.com/@shamima_afrinomi338/video/7345759236976053522?is_from_webapp=1&sender_device=pc"
+//            KitTIFT.identifyURL(url).let {
+//                Log.e("TYPE", it.toString())
+//                when(it) {
+//                    URLTypes.TIKTOK -> downloadTiktok(url)
+//                    URLTypes.FACEBOOK -> TODO()
+//                    URLTypes.INSTAGRAM -> TODO()
+//                    URLTypes.TWITTER -> TODO()
+//                    URLTypes.UNKNOWN -> TODO()
+//                }
+//            }
+//        }
+
         CoroutineScope(Dispatchers.IO).launch {
-            val url = "https://www.tiktok.com/@shamima_afrinomi338/video/7345759236976053522?is_from_webapp=1&sender_device=pc"
-            KitTIFT.identifyURL(url).let {
-                Log.e("TYPE", it.toString())
-                when(it) {
-                    URLTypes.TIKTOK -> downloadTiktok(url)
-                    URLTypes.FACEBOOK -> TODO()
-                    URLTypes.INSTAGRAM -> TODO()
-                    URLTypes.TWITTER -> TODO()
-                    URLTypes.UNKNOWN -> TODO()
+            KitTIFT.tiktok.getTiktokInfos(
+                this@SplashActivity,
+                ArrayList<String>().also {
+                    it.add("7340174709188726034")
+                    it.add("7340174709188726034")
+                    it.add("7340174709188726034")
+                    it.add("7340174709188726034")
                 }
+            ).let {
+                Log.e("DATA", it.toString())
             }
         }
     }

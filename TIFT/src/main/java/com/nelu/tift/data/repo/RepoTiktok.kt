@@ -1,6 +1,7 @@
 package com.nelu.tift.data.repo
 
 import android.app.Activity
+import android.graphics.Bitmap
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -8,8 +9,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebChromeClient
 import android.webkit.WebView
+import android.webkit.WebViewClient
+import com.nelu.tift.config.Scrapper
+import com.nelu.tift.config.Scrapper.checkProgress
+import com.nelu.tift.config.Scrapper.getVideoInfo
+import com.nelu.tift.config.Scrapper.getVideoPasteFunc
 import com.nelu.tift.data.model.DownloadStatus
 import com.nelu.tift.data.apis.ApiService
+import com.nelu.tift.data.model.Author
 import com.nelu.tift.data.model.remote.ModelRequest
 import com.nelu.tift.data.model.ModelTiktok
 import com.nelu.tift.data.model.ModelTiktok.Companion.toModelTiktok
@@ -22,6 +29,7 @@ import com.nelu.tift.di.Initializations.daoDownloads
 import com.nelu.tift.di.KitTIFT
 import com.nelu.tift.utils.processPageData
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -29,7 +37,9 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.io.File
+import kotlin.coroutines.resume
 
 class RepoTiktok: BaseTiktok {
 
@@ -120,6 +130,79 @@ class RepoTiktok: BaseTiktok {
 
     override fun downloadTiktoks(data: List<Pair<ModelTiktok, String>>): Flow<DownloadStatus> {
         TODO("Not yet implemented")
+    }
+
+    override suspend fun getTiktokInfos(
+        activity: Activity,
+        urls: ArrayList<String>
+    ): ArrayList<ModelTiktok> {
+        val data = ArrayList<ModelTiktok>()
+
+        urls.forEach { ids->
+            data.add(
+                suspendCancellableCoroutine { continuation ->
+                    activity.runOnUiThread {
+                        WebView(KitTIFT.application).let { webView ->
+                            webView.layoutParams = ViewGroup.LayoutParams(1, 1)
+
+                            webView.webViewClient = object : WebViewClient() {
+                                override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                                    Handler(Looper.getMainLooper()).postDelayed({
+                                        view?.evaluateJavascript(ids.getVideoPasteFunc()) {}
+                                    }, 1000)
+                                }
+
+                                override fun onPageFinished(view: WebView?, url: String?) {
+                                    super.onPageFinished(view, url)
+                                    CoroutineScope(Dispatchers.Main).launch {
+                                        var loop = true
+                                        while (loop) {
+                                            view?.evaluateJavascript(checkProgress) {
+                                                loop = it != "null"
+                                                Log.e("IT", it.toString())
+                                            }
+                                            if (loop) delay(1000)
+                                        }
+                                        view?.evaluateJavascript(getVideoInfo) { html ->
+                                            JSONObject(
+                                                html.substring(1, html.length-1)
+                                                    .replace("\\", "")
+                                            ).let {
+                                                continuation.resume(
+                                                    ModelTiktok(
+                                                        type = "",
+                                                        author = Author(
+                                                            avatar = it.getString("image"),
+                                                            nickname = it.getString("title")
+                                                        ),
+                                                        desc = it.getString("description"),
+                                                        music = "",
+                                                        videoSD = "",
+                                                        videoHD = "",
+                                                        videWatermark = ""
+                                                    )
+                                                )
+                                            }
+                                        }
+
+                                    }
+                                }
+                            }
+
+                            val webSettings = webView.settings
+                            webSettings.javaScriptEnabled = true
+                            webSettings.domStorageEnabled = true
+
+                            activity.addContentView(webView, webView.layoutParams)
+                            webView.loadUrl("https://savetik.net/")
+                            webView.visibility = View.GONE
+                        }
+                    }
+                }
+            )
+        }
+
+        return data
     }
 
     private fun extractNumberFromUrl(url: String): String {
