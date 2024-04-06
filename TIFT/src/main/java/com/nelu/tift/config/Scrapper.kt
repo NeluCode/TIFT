@@ -5,8 +5,8 @@ object Scrapper {
     val myvidintenturlis = "https://www.tiktok.com/@foodoclocktv/video/7329928305682025770"
 
     //
-    fun String.getVideoPasteFunc() = "javascript:(function() { " +
-            "document.getElementById('url').value ='" + "https://www.tiktok.com/@villainmasud01/video/$this" + "';" +
+    fun getVideoPasteFunc(profile: String, id: String) = "javascript:(function() { " +
+            "document.getElementById('url').value ='" + "https://www.tiktok.com/@$profile/video/$id" + "';" +
             "document.getElementById('send').click();" +
             "})();"
 

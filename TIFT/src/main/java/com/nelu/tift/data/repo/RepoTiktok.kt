@@ -161,7 +161,7 @@ class RepoTiktok: BaseTiktok {
                     webView.webViewClient = object : WebViewClient() {
                         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                             Handler(Looper.getMainLooper()).postDelayed({
-                                view?.evaluateJavascript(ids.getVideoPasteFunc()) {}
+                                view?.evaluateJavascript(getVideoPasteFunc(ids, ids)) {}
                             }, 1000)
                         }
 
