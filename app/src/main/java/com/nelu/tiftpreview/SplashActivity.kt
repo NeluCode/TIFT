@@ -9,6 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.concurrent.CopyOnWriteArrayList
 
 class SplashActivity : AppCompatActivity() {
 
@@ -34,15 +35,18 @@ class SplashActivity : AppCompatActivity() {
 //            KitTIFT.tiktok.getThumbnail(this@SplashActivity, "https://www.tiktok.com/@shamima_afrinomi338/video/7345759236976053522").let {
 //                Log.e("Thumbnail", it)
 //            }
-            KitTIFT.tiktok.getBatchVideo(
-                this@SplashActivity,
-                "shamima_afrinomi338"
-            ).let {
-                for (x in 0 until it.size) {
-                    KitTIFT.tiktok.getThumbnail(this@SplashActivity, it[x]).let {
-                        Log.e("Thumbnail", it)
-                    }
+            val threadSafeList = CopyOnWriteArrayList<String>()
+            threadSafeList.addAll(
+                KitTIFT.tiktok.getBatchVideo(
+                    this@SplashActivity,
+                    "shamima_afrinomi338"
+                )
+            )
+            threadSafeList.forEach {
+                KitTIFT.tiktok.getThumbnail(this@SplashActivity, it).let {
+                    Log.e("Thumbnail", it)
                 }
+                delay(1000)
             }
 //            KitTIFT.tiktok.getTiktokInfos(
 //                this@SplashActivity,

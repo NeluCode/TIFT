@@ -64,6 +64,7 @@ class RepoTiktok: BaseTiktok {
                     s.domStorageEnabled = true
 
                     w.webChromeClient = object : WebChromeClient() {
+                        var sent = false
                         private var isPageLoaded = false
                         override fun onProgressChanged(view: WebView?, newProgress: Int) {
                             super.onProgressChanged(view, newProgress)
@@ -75,8 +76,8 @@ class RepoTiktok: BaseTiktok {
                                             "document.getElementById('make').click();" +
                                             "})();"
                                 ) {
-                                    var thumb: String = ""
-                                    mainThread.launch {
+                                    var thumb = ""
+                                    CoroutineScope(Dispatchers.Main).launch {
                                         while (thumb.isEmpty()) {
                                             delay(500)
                                             w.evaluateJavascript(
@@ -93,10 +94,11 @@ class RepoTiktok: BaseTiktok {
                                             """.trimIndent()
                                             ) {
                                                 thumb = it
-                                                if (it.isNotEmpty())
-                                                    continuation.resume(it)
                                             }
                                         }
+                                        if (!sent)
+                                            continuation.resume(thumb)
+                                        sent = true
                                     }
                                 }
                             }
