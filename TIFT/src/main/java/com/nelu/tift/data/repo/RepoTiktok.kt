@@ -7,6 +7,7 @@ import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -37,6 +38,7 @@ import java.io.File
 import kotlin.coroutines.resume
 
 import kotlinx.coroutines.*
+import org.json.JSONException
 
 class RepoTiktok: BaseTiktok {
 
@@ -55,7 +57,6 @@ class RepoTiktok: BaseTiktok {
         return suspendCancellableCoroutine { continuation->
             activity.runOnUiThread {
                 if (thumGen != null) {
-                    Log.e("From", "Cache")
                     thumGen?.evaluateJavascript(
                         "(function() { " +
                                 "document.getElementById('link').value ='" + videoUrl + "';" +
@@ -90,53 +91,37 @@ class RepoTiktok: BaseTiktok {
                     WebView(KitTIFT.application).let { w ->
                         w.layoutParams = ViewGroup.LayoutParams(1, 1)
                         val s = w.settings
-                        s.userAgentString =
-                            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36"
-                        s.loadWithOverviewMode = true
-                        s.useWideViewPort = true
+
                         s.javaScriptEnabled = true
+
                         s.domStorageEnabled = true
 
                         w.webChromeClient = object : WebChromeClient() {
                             var sent = false
                             private var isPageLoaded = false
+                            override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
+                                try {
+                                    JSONObject(consoleMessage.message().toString()).getString("thumbnail_url").let {
+                                        continuation.resume(it)
+                                    }
+                                } catch (e: JSONException) {
+                                    Log.d("CONSOLE EXC", e.toString())
+                                } catch (e: Exception) {
+                                    Log.d("CONSOLE EXC", e.toString())
+                                }
+                                return true
+                            }
                             override fun onProgressChanged(view: WebView?, newProgress: Int) {
                                 super.onProgressChanged(view, newProgress)
                                 if (newProgress == 100 && !isPageLoaded) {
-                                    thumGen = view
+//                                    thumGen = view
                                     isPageLoaded = true
                                     w.evaluateJavascript(
                                         "(function() { " +
                                                 "document.getElementById('link').value ='" + videoUrl + "';" +
                                                 "document.getElementById('make').click();" +
-                                                "})();"
-                                    ) {
-                                        var thumb = ""
-                                        CoroutineScope(Dispatchers.Main).launch {
-                                            while (thumb.isEmpty()) {
-                                                delay(500)
-                                                w.evaluateJavascript(
-                                                    """
-                                                (function() {
-                                                    var content = {};
-                                                    var divContent = document.querySelector('.id-of-img-tag');
-                                                    if (divContent) {
-                                                        return divContent.getAttribute('src');
-                                                    } else {
-                                                        return null;
-                                                    }
-                                                })();
-                                            """.trimIndent()
-                                                ) {
-                                                    thumb = it
-                                                }
-                                            }
-                                            if (!sent)
-                                                continuation.resume(thumb)
-                                            sent = true
-                                            thumGen?.reload()
-                                        }
-                                    }
+                                                "})();", null
+                                    )
                                 }
                             }
                         }
@@ -156,10 +141,11 @@ class RepoTiktok: BaseTiktok {
     ): List<String> {
         val list = ArrayList<String>()
         withContext(Dispatchers.Main) {
-            val sublists: List<List<String>> = videoUrl.chunked(10)
-            sublists.forEach {
-                list.addAll(it.map { async { getThumbnail(activity, it) } }.awaitAll())
-            }
+//            val sublists: List<List<String>> = videoUrl.chunked(5)
+//            sublists.forEach {
+//
+//            }
+            list.addAll(videoUrl.map { async { getThumbnail(activity, it) } }.awaitAll())
         }
         return list
     }
