@@ -7,6 +7,7 @@ import com.nelu.tift.data.model.URLTypes
 import com.nelu.tift.di.KitTIFT
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class SplashActivity : AppCompatActivity() {
@@ -30,11 +31,18 @@ class SplashActivity : AppCompatActivity() {
 //        }
 
         CoroutineScope(Dispatchers.IO).launch {
+//            KitTIFT.tiktok.getThumbnail(this@SplashActivity, "https://www.tiktok.com/@shamima_afrinomi338/video/7345759236976053522").let {
+//                Log.e("Thumbnail", it)
+//            }
             KitTIFT.tiktok.getBatchVideo(
                 this@SplashActivity,
                 "shamima_afrinomi338"
             ).let {
-                Log.e("DATA", it.toString())
+                for (x in 0 until it.size) {
+                    KitTIFT.tiktok.getThumbnail(this@SplashActivity, it[x]).let {
+                        Log.e("Thumbnail", it)
+                    }
+                }
             }
 //            KitTIFT.tiktok.getTiktokInfos(
 //                this@SplashActivity,

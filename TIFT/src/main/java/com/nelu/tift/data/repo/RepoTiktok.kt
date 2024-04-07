@@ -10,19 +10,16 @@ import android.view.ViewGroup
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import com.nelu.tift.config.Scrapper
 import com.nelu.tift.config.Scrapper.checkProgress
 import com.nelu.tift.config.Scrapper.getVideoInfo
 import com.nelu.tift.config.Scrapper.getVideoPasteFunc
 import com.nelu.tift.data.model.DownloadStatus
-import com.nelu.tift.data.apis.ApiService
 import com.nelu.tift.data.model.Author
 import com.nelu.tift.data.model.remote.ModelRequest
 import com.nelu.tift.data.model.ModelTiktok
 import com.nelu.tift.data.model.ModelTiktok.Companion.toModelTiktok
 import com.nelu.tift.data.model.URLTypes
 import com.nelu.tift.data.repo.base.BaseTiktok
-import com.nelu.tift.db.dao.DaoDownloads
 import com.nelu.tift.data.model.local.ModelDownloads
 import com.nelu.tift.di.Initializations.apiService
 import com.nelu.tift.di.Initializations.daoDownloads
@@ -30,13 +27,11 @@ import com.nelu.tift.di.KitTIFT
 import com.nelu.tift.utils.processPageData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
 import kotlin.coroutines.resume
@@ -45,12 +40,75 @@ import kotlinx.coroutines.*
 
 class RepoTiktok: BaseTiktok {
 
+    private val mainThread = CoroutineScope(Dispatchers.Main)
+
     override suspend fun getVideo(url: String): ModelTiktok? {
         apiService.getTiktokList(ModelRequest(url)).execute().let {
             if (it.isSuccessful)
                 return it.body()!!.toModelTiktok()
         }
         return null
+    }
+
+    override suspend fun getThumbnail(activity: Activity, videoUrl: String): String {
+        Log.e("VIDEO", videoUrl)
+        return suspendCancellableCoroutine { continuation->
+            activity.runOnUiThread {
+                WebView(KitTIFT.application).let { w ->
+                    w.layoutParams = ViewGroup.LayoutParams(1, 1)
+                    val s = w.settings
+                    s.userAgentString = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36"
+                    s.loadWithOverviewMode = true
+                    s.useWideViewPort = true
+                    s.javaScriptEnabled = true
+                    s.domStorageEnabled = true
+
+                    w.webChromeClient = object : WebChromeClient() {
+                        private var isPageLoaded = false
+                        override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                            super.onProgressChanged(view, newProgress)
+                            if (newProgress == 100 && !isPageLoaded) {
+                                isPageLoaded = true
+                                w.evaluateJavascript(
+                                    "(function() { " +
+                                            "document.getElementById('link').value ='" + videoUrl + "';" +
+                                            "document.getElementById('make').click();" +
+                                            "})();"
+                                ) {
+                                    var thumb: String = ""
+                                    mainThread.launch {
+                                        while (thumb.isEmpty()) {
+                                            delay(500)
+                                            w.evaluateJavascript(
+                                                """
+                                                (function() {
+                                                    var content = {};
+                                                    var divContent = document.querySelector('.id-of-img-tag');
+                                                    if (divContent) {
+                                                        return divContent.getAttribute('src');
+                                                    } else {
+                                                        return null;
+                                                    }
+                                                })();
+                                            """.trimIndent()
+                                            ) {
+                                                thumb = it
+                                                if (it.isNotEmpty())
+                                                    continuation.resume(it)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    activity.addContentView(w, w.layoutParams)
+                    w.loadUrl("file:///android_asset/index.html")
+                    w.visibility =View.GONE
+                }
+            }
+        }
     }
 
     override suspend fun getBatchVideo(activity: Activity, profileID: String): List<String> {
@@ -67,7 +125,7 @@ class RepoTiktok: BaseTiktok {
                             Log.e("PROGRESS", newProgress.toString())
                             if (newProgress == 100 && !isPageLoaded) {
                                 isPageLoaded = true
-                                processPageData(view, continuation)
+                                processPageData(view, profileID, continuation)
                             }
                         }
                     }
