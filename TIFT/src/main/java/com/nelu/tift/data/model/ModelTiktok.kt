@@ -12,6 +12,7 @@ data class ModelTiktok(
     val music: String,
     val videoSD: String,
     val videoHD: String?,
+    val thumbnail: String,
     val videWatermark: String
 ) {
 
@@ -25,6 +26,7 @@ data class ModelTiktok(
                     get("music").asString,
                     get("video1").asString,
                     get("video_hd")?.asString,
+                    "",
                     get("video_watermark").asString
                 )
             }

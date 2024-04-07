@@ -36,16 +36,16 @@ class SplashActivity : AppCompatActivity() {
 //                Log.e("Thumbnail", it)
 //            }
             val threadSafeList = CopyOnWriteArrayList<String>()
-            threadSafeList.addAll(
-                KitTIFT.tiktok.getBatchVideo(
-                    this@SplashActivity,
-                    "shamima_afrinomi338"
-                )
-            )
-
-            KitTIFT.tiktok.getThumbnail(this@SplashActivity, ArrayList(threadSafeList)).let {
-                Log.e("Thumbnail", it.toString())
+            KitTIFT.tiktok.getBatchVideo(
+                this@SplashActivity,
+                "shamima_afrinomi338"
+            ).let {
+                Log.e("ALL", it.toString())
             }
+
+//            KitTIFT.tiktok.getThumbnail(this@SplashActivity, ArrayList(threadSafeList)).let {
+//                Log.e("Thumbnail", it.toString())
+//            }
 //            KitTIFT.tiktok.getTiktokInfos(
 //                this@SplashActivity,
 //                ArrayList<String>().also {

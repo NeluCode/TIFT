@@ -25,6 +25,7 @@ import com.nelu.tift.data.model.local.ModelDownloads
 import com.nelu.tift.di.Initializations.apiService
 import com.nelu.tift.di.Initializations.daoDownloads
 import com.nelu.tift.di.KitTIFT
+import com.nelu.tift.utils.getProfileVideos
 import com.nelu.tift.utils.processPageData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -71,7 +72,7 @@ class RepoTiktok: BaseTiktok {
                                     """
                                     (function() {
                                         var content = {};
-                                        var divContent = document.querySelector('.id-of-img-tag');
+                                        var divContent = document.querySelector('.css-wjuodt-DivVideoFeedV2');
                                         if (divContent) {
                                             return divContent.getAttribute('src');
                                         } else {
@@ -141,52 +142,53 @@ class RepoTiktok: BaseTiktok {
     ): List<String> {
         val list = ArrayList<String>()
         withContext(Dispatchers.Main) {
-//            val sublists: List<List<String>> = videoUrl.chunked(5)
-//            sublists.forEach {
-//
-//            }
-            list.addAll(videoUrl.map { async { getThumbnail(activity, it) } }.awaitAll())
+            val sublists: List<List<String>> = videoUrl.chunked(15)
+            sublists.forEach {
+                list.addAll(it.map { async { getThumbnail(activity, it) } }.awaitAll())
+            }
+//            list.addAll(videoUrl.map { async { getThumbnail(activity, it) } }.awaitAll())
         }
         return list
     }
 
-    override suspend fun getBatchVideo(activity: Activity, profileID: String): List<String> {
-        return suspendCancellableCoroutine { continuation ->
-            activity.runOnUiThread {
-                WebView(KitTIFT.application).let { webView ->
-
-                    webView.layoutParams = ViewGroup.LayoutParams(1, 1)
-
-                    webView.webChromeClient = object : WebChromeClient() {
-                        private var isPageLoaded = false
-                        override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                            super.onProgressChanged(view, newProgress)
-                            Log.e("PROGRESS", newProgress.toString())
-                            if (newProgress == 100 && !isPageLoaded) {
-                                isPageLoaded = true
-                                processPageData(view, profileID, continuation)
-                            }
-                        }
-                    }
-
-                    val webSettings = webView.settings
-
-                    webSettings.userAgentString = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36"
-
-                    webSettings.loadWithOverviewMode = true
-
-                    webSettings.useWideViewPort = true
-
-                    webSettings.javaScriptEnabled = true
-                    
-                    webSettings.domStorageEnabled = true
-
-                    activity.addContentView(webView, webView.layoutParams)
-                    webView.loadUrl("https://www.tiktok.com/@$profileID")
-                    webView.visibility = View.GONE
-                }
-            }
-        }
+    override suspend fun getBatchVideo(activity: Activity, profileID: String): List<ModelTiktok> {
+        return getProfileVideos(activity, profileID)
+//        return suspendCancellableCoroutine { continuation ->
+//            activity.runOnUiThread {
+//                WebView(KitTIFT.application).let { webView ->
+//
+//                    webView.layoutParams = ViewGroup.LayoutParams(1, 1)
+//
+//                    webView.webChromeClient = object : WebChromeClient() {
+//                        private var isPageLoaded = false
+//                        override fun onProgressChanged(view: WebView?, newProgress: Int) {
+//                            super.onProgressChanged(view, newProgress)
+//                            Log.e("PROGRESS", newProgress.toString())
+//                            if (newProgress == 100 && !isPageLoaded) {
+//                                isPageLoaded = true
+//                                processPageData(view, profileID, continuation)
+//                            }
+//                        }
+//                    }
+//
+//                    val webSettings = webView.settings
+//
+//                    webSettings.userAgentString = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36"
+//
+//                    webSettings.loadWithOverviewMode = true
+//
+//                    webSettings.useWideViewPort = true
+//
+//                    webSettings.javaScriptEnabled = true
+//
+//                    webSettings.domStorageEnabled = true
+////
+//                    activity.addContentView(webView, webView.layoutParams)
+//                    webView.loadUrl("https://www.tiktok.com/@$profileID")
+//                    webView.visibility = View.GONE
+//                }
+//            }
+//        }
     }
 
     override fun downloadTiktok(data: ModelTiktok, url: String): Flow<DownloadStatus> = flow {
@@ -295,6 +297,7 @@ class RepoTiktok: BaseTiktok {
                                                 music = "",
                                                 videoSD = "",
                                                 videoHD = "",
+                                                thumbnail = "",
                                                 videWatermark = ""
                                             )
                                         )

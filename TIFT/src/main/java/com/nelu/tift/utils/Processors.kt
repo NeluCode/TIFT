@@ -17,12 +17,12 @@ fun processPageData(view: WebView?, profileID: String, continuation: Cancellable
     val videoIds = mutableListOf<String>()
 
     CoroutineScope(Dispatchers.Main).launch {
-//        var scroll = 0
-//        while (scroll < 3) {
-//            paginateWebView(view)
-//            delay(2000)
-//            scroll++
-//        }
+        var scroll = 0
+        while (scroll < 3) {
+            paginateWebView(view)
+            delay(2000)
+            scroll++
+        }
         while (videoIds.isEmpty() && retried < 10) {
             delay(1000)
             view?.evaluateJavascript(
@@ -39,7 +39,7 @@ fun processPageData(view: WebView?, profileID: String, continuation: Cancellable
             }
         }
 
-        continuation.resume(videoIds) { e ->
+        continuation.resume(videoIds.distinct()) { e ->
             view?.stopLoading()
         }
     }
