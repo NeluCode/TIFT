@@ -14,6 +14,8 @@ interface BaseTiktok {
 
     suspend fun getThumbnail(activity: Activity, videoUrl: String): String
 
+    suspend fun getThumbnail(activity: Activity, videoUrl: ArrayList<String>): List<String>
+
     suspend fun getBatchVideo(activity: Activity, profileID: String): List<String>
 
     fun downloadTiktok(data: ModelTiktok, url: String): Flow<DownloadStatus>

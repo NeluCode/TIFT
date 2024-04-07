@@ -40,7 +40,7 @@ import kotlinx.coroutines.*
 
 class RepoTiktok: BaseTiktok {
 
-    private val mainThread = CoroutineScope(Dispatchers.Main)
+    private var thumGen: WebView? = null
 
     override suspend fun getVideo(url: String): ModelTiktok? {
         apiService.getTiktokList(ModelRequest(url)).execute().let {
@@ -54,34 +54,69 @@ class RepoTiktok: BaseTiktok {
         Log.e("VIDEO", videoUrl)
         return suspendCancellableCoroutine { continuation->
             activity.runOnUiThread {
-                WebView(KitTIFT.application).let { w ->
-                    w.layoutParams = ViewGroup.LayoutParams(1, 1)
-                    val s = w.settings
-                    s.userAgentString = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36"
-                    s.loadWithOverviewMode = true
-                    s.useWideViewPort = true
-                    s.javaScriptEnabled = true
-                    s.domStorageEnabled = true
-
-                    w.webChromeClient = object : WebChromeClient() {
-                        var sent = false
-                        private var isPageLoaded = false
-                        override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                            super.onProgressChanged(view, newProgress)
-                            if (newProgress == 100 && !isPageLoaded) {
-                                isPageLoaded = true
-                                w.evaluateJavascript(
-                                    "(function() { " +
-                                            "document.getElementById('link').value ='" + videoUrl + "';" +
-                                            "document.getElementById('make').click();" +
-                                            "})();"
+                if (thumGen != null) {
+                    Log.e("From", "Cache")
+                    thumGen?.evaluateJavascript(
+                        "(function() { " +
+                                "document.getElementById('link').value ='" + videoUrl + "';" +
+                                "document.getElementById('make').click();" +
+                                "})();"
+                    ) {
+                        var thumb = ""
+                        CoroutineScope(Dispatchers.Main).launch {
+                            while (thumb.isEmpty()) {
+                                delay(500)
+                                thumGen?.evaluateJavascript(
+                                    """
+                                    (function() {
+                                        var content = {};
+                                        var divContent = document.querySelector('.id-of-img-tag');
+                                        if (divContent) {
+                                            return divContent.getAttribute('src');
+                                        } else {
+                                            return null;
+                                        }
+                                    })();
+                                """.trimIndent()
                                 ) {
-                                    var thumb = ""
-                                    CoroutineScope(Dispatchers.Main).launch {
-                                        while (thumb.isEmpty()) {
-                                            delay(500)
-                                            w.evaluateJavascript(
-                                                """
+                                    thumb = it
+                                }
+                            }
+                            continuation.resume(thumb)
+                        }
+                    }
+                } else {
+                    Log.e("From", "New")
+                    WebView(KitTIFT.application).let { w ->
+                        w.layoutParams = ViewGroup.LayoutParams(1, 1)
+                        val s = w.settings
+                        s.userAgentString =
+                            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36"
+                        s.loadWithOverviewMode = true
+                        s.useWideViewPort = true
+                        s.javaScriptEnabled = true
+                        s.domStorageEnabled = true
+
+                        w.webChromeClient = object : WebChromeClient() {
+                            var sent = false
+                            private var isPageLoaded = false
+                            override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                                super.onProgressChanged(view, newProgress)
+                                if (newProgress == 100 && !isPageLoaded) {
+                                    thumGen = view
+                                    isPageLoaded = true
+                                    w.evaluateJavascript(
+                                        "(function() { " +
+                                                "document.getElementById('link').value ='" + videoUrl + "';" +
+                                                "document.getElementById('make').click();" +
+                                                "})();"
+                                    ) {
+                                        var thumb = ""
+                                        CoroutineScope(Dispatchers.Main).launch {
+                                            while (thumb.isEmpty()) {
+                                                delay(500)
+                                                w.evaluateJavascript(
+                                                    """
                                                 (function() {
                                                     var content = {};
                                                     var divContent = document.querySelector('.id-of-img-tag');
@@ -92,25 +127,41 @@ class RepoTiktok: BaseTiktok {
                                                     }
                                                 })();
                                             """.trimIndent()
-                                            ) {
-                                                thumb = it
+                                                ) {
+                                                    thumb = it
+                                                }
                                             }
+                                            if (!sent)
+                                                continuation.resume(thumb)
+                                            sent = true
+                                            thumGen?.reload()
                                         }
-                                        if (!sent)
-                                            continuation.resume(thumb)
-                                        sent = true
                                     }
                                 }
                             }
                         }
-                    }
 
-                    activity.addContentView(w, w.layoutParams)
-                    w.loadUrl("file:///android_asset/index.html")
-                    w.visibility =View.GONE
+                        activity.addContentView(w, w.layoutParams)
+                        w.loadUrl("file:///android_asset/index.html")
+                        w.visibility = View.GONE
+                    }
                 }
             }
         }
+    }
+
+    override suspend fun getThumbnail(
+        activity: Activity,
+        videoUrl: ArrayList<String>
+    ): List<String> {
+        val list = ArrayList<String>()
+        withContext(Dispatchers.Main) {
+            val sublists: List<List<String>> = videoUrl.chunked(10)
+            sublists.forEach {
+                list.addAll(it.map { async { getThumbnail(activity, it) } }.awaitAll())
+            }
+        }
+        return list
     }
 
     override suspend fun getBatchVideo(activity: Activity, profileID: String): List<String> {

@@ -42,11 +42,9 @@ class SplashActivity : AppCompatActivity() {
                     "shamima_afrinomi338"
                 )
             )
-            threadSafeList.forEach {
-                KitTIFT.tiktok.getThumbnail(this@SplashActivity, it).let {
-                    Log.e("Thumbnail", it)
-                }
-                delay(1000)
+
+            KitTIFT.tiktok.getThumbnail(this@SplashActivity, ArrayList(threadSafeList)).let {
+                Log.e("Thumbnail", it.toString())
             }
 //            KitTIFT.tiktok.getTiktokInfos(
 //                this@SplashActivity,
