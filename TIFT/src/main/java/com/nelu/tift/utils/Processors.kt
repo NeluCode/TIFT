@@ -17,6 +17,12 @@ fun processPageData(view: WebView?, continuation: CancellableContinuation<List<S
     val videoIds = mutableListOf<String>()
 
     CoroutineScope(Dispatchers.Main).launch {
+        var scroll = 0
+        while (scroll < 3) {
+            paginateWebView(view)
+            delay(2000)
+            scroll++
+        }
         while (videoIds.isEmpty() && retried < 10) {
             delay(1000)
             view?.evaluateJavascript(
@@ -35,6 +41,24 @@ fun processPageData(view: WebView?, continuation: CancellableContinuation<List<S
 
         continuation.resume(videoIds) { e ->
             view?.stopLoading()
+        }
+    }
+}
+
+fun paginateWebView(webview: WebView?) {
+    webview?.evaluateJavascript(
+        "(function() { return document.body.scrollHeight; })();"
+    ) { result ->
+        Log.e("Res", result.toString())
+        val totalHeight = result?.toIntOrNull() ?: 0
+        val pageSize = 1000
+        var currentPosition = 0
+
+        // Scroll through the page in pageSize increments until the end is reached
+        while (currentPosition < totalHeight) {
+            val script = "window.scrollTo(0, ${currentPosition + pageSize});"
+            webview.evaluateJavascript(script, null)
+            currentPosition += pageSize
         }
     }
 }

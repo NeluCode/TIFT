@@ -57,6 +57,7 @@ class RepoTiktok: BaseTiktok {
         return suspendCancellableCoroutine { continuation ->
             activity.runOnUiThread {
                 WebView(KitTIFT.application).let { webView ->
+
                     webView.layoutParams = ViewGroup.LayoutParams(1, 1)
 
                     webView.webChromeClient = object : WebChromeClient() {
@@ -72,6 +73,12 @@ class RepoTiktok: BaseTiktok {
                     }
 
                     val webSettings = webView.settings
+
+                    webSettings.userAgentString = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36"
+
+                    webSettings.loadWithOverviewMode = true
+
+                    webSettings.useWideViewPort = true
 
                     webSettings.javaScriptEnabled = true
                     

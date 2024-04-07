@@ -14,7 +14,7 @@ class RepoTIFT : BaseTIFT {
 
     override val tiktok: BaseTiktok get() = RepoTiktok()
 
-    override suspend fun identifyURL(url: String) = when {
+    override fun identifyURL(url: String) = when {
         isTikTokUrl(url) -> URLTypes.TIKTOK
         isFacebookUrl(url) -> URLTypes.FACEBOOK
         isInstagramUrl(url) -> URLTypes.INSTAGRAM
@@ -22,7 +22,7 @@ class RepoTIFT : BaseTIFT {
         else -> URLTypes.UNKNOWN
     }
 
-    override suspend fun getDownloads() = daoDownloads.getAllDownloads()
+    override fun getDownloads() = daoDownloads.getAllDownloads()
 
     private fun isTikTokUrl(url: String): Boolean {
         val tiktokPattern = Pattern.compile("^(https?://)?(www\\.)?(tiktok\\.com)")

@@ -9,7 +9,7 @@ interface BaseTIFT {
 
     val tiktok: BaseTiktok
 
-    suspend fun identifyURL(url: String): URLTypes
+    fun identifyURL(url: String): URLTypes
 
-    suspend fun getDownloads(): List<ModelDownloads>
+    fun getDownloads(): List<ModelDownloads>
 }

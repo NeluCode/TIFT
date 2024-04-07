@@ -29,7 +29,7 @@ object KitTIFT : BaseTIFT {
     /** TIFT accessor */
     override val tiktok: BaseTiktok get() = tift.tiktok
 
-    override suspend fun identifyURL(url: String) : URLTypes = tift.identifyURL(url)
+    override fun identifyURL(url: String) : URLTypes = tift.identifyURL(url)
 
-    override suspend fun getDownloads() : List<ModelDownloads> = tift.getDownloads()
+    override fun getDownloads() : List<ModelDownloads> = tift.getDownloads()
 }
